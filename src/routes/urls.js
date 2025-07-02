@@ -21,6 +21,11 @@ async function urlsRoutes(fastify, opts) {
     preHandler: fastify.csrfProtection,
     handler: Url.unlock.bind(Url)
   });
+
+  fastify.get('/users', {
+    preHandler: [ fastify.authenticate ],
+    handler: Url.users.bind(Url)
+  })
 }
 
 module.exports = urlsRoutes;

@@ -43,6 +43,13 @@ class UrlService {
     return urlDestination
   }
 
+  async getLinksUser({ userId }){
+    if (!userId) throw new Error("UserId is not find")
+      
+    const links = await urlRepository.getAllLinksUser({ userId })
+    return { links }
+  }
+
   async unlock({short, password}){
     if (!short) throw new Error("ShortId is required")
     if (!password) throw new Error("Password is required")

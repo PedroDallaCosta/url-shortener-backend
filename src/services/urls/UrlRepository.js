@@ -18,14 +18,37 @@ class UrlRepository {
     return await this._buildResponseData(data)
   }
 
-  async getProtectShort({ short }){
+  async getProtectShort({ short }) {
     const data = await this._getProtectShort({ short })
     if (!data?.url) return false
 
     const { havePassword, expire, expire_date } = await this._buildResponseData(data)
     return { havePassword, expire, expire_date, urlDestination: data?.url, hash: data?.password }
   }
-  
+
+  async getAllLinksUser({ userId }) {
+    const rows = await this._getLinksUser({ userId })
+    const response = rows.map(({ short, owner, url, password, created_at, expire, expires_at, clicks, unique_clicks }) => {
+      const havePassword = password && password != "" ? true : false
+      const urlDestination = havePassword ? "***********" : url
+
+      const isExpire = expire && expires_at
+        ? new Date(expires_at).getTime() <= Date.now()
+        : false;
+
+      return {
+        havePassword,
+        urlDestination,
+        short: `${process.env.HOST}/${short}`,
+        clicks,
+        isExpire,
+        created_at
+      }
+    })
+
+    return response
+  }
+
   async createShortUrl({ userId, url, password, expireTime }) {
     try {
       let hash = ""
@@ -89,9 +112,14 @@ class UrlRepository {
     return rows[0]
   }
 
-  async _getProtectShort({ short }){
+  async _getLinksUser({ userId }) {
+    const { rows } = await this.pool.query("SELECT * FROM urls WHERE owner = $1", [userId])
+    return rows
+  }
+
+  async _getProtectShort({ short }) {
     const { rows } = await this.pool.query('SELECT * FROM urls WHERE short = $1', [short])
-    if(!rows[0]) return false
+    if (!rows[0]) return false
     return rows[0]
   }
 

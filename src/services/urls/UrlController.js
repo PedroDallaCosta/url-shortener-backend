@@ -24,6 +24,12 @@ class UrlController {
     return reply.redirect(urlDestination)
   }
 
+  async users(request, reply){
+    const { userId } = request?.user
+    const links = await urlService.getLinksUser({ userId })
+    return reply.status(200).send(links)
+  }
+
   async unlock(request, reply) {
     const { shortId } = request?.params
     const { password } = request?.body
