@@ -1,10 +1,11 @@
 const bcrypt = require('bcrypt');
+const axios = require('axios')
 const pool = require('../../config/database');
 
 const UrlRepository = require('./UrlRepository')
 const ValidationService = require('../auth/ValidationService');
 
-const urlRepository = new UrlRepository(bcrypt, pool)
+const urlRepository = new UrlRepository(bcrypt, pool, axios)
 const validationService = new ValidationService()
 
 class UrlService {
@@ -29,35 +30,42 @@ class UrlService {
     return { urlData }
   }
 
-  async acessShort({ short }) {
+  async acessShort({ short, ip }) {
     if (!short) throw new Error("ShortId is required")
 
-    const { havePassword, expire, expire_date, urlDestination } = await urlRepository.getProtectShort({short})
+    const { havePassword, expire, expire_date, urlDestination } = await urlRepository.getProtectShort({ short })
+    const country = await urlRepository.getCountryUser({ ip })
 
     if (expire && expire_date - new Date() <= 0) {
       const redirect = await urlRepository.deleteLinkExist({ short })
       return redirect
-    } 
+    }
 
     if (havePassword) return `${process.env.FRONT_END}/unlock/${short}`
+
+    await urlRepository.incrementClick({ short })
+    if (country !== "") await urlRepository.incrementCountry({ short, country })
+
     return urlDestination
   }
 
-  async getLinksUser({ userId }){
+  async getLinksUser({ userId }) {
     if (!userId) throw new Error("UserId is not find")
-      
+
     const links = await urlRepository.getAllLinksUser({ userId })
     return { links }
   }
 
-  async unlock({short, password}){
+  async unlock({ short, password }) {
     if (!short) throw new Error("ShortId is required")
     if (!password) throw new Error("Password is required")
-    
+
     const { hash, urlDestination } = await urlRepository.getProtectShort({ short })
     const valid = await validationService.validPassword(password, hash)
-    
+
     if (!valid) throw new Error("Invalid credentials")
+      
+    await urlRepository.incrementClick({ short })
     return { urlDestination }
   }
 }

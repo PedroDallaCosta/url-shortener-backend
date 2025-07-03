@@ -20,7 +20,12 @@ class UrlController {
 
   async acessShort(request, reply) {
     const { shortId } = request.params;
-    const urlDestination = await urlService.acessShort({ short: shortId })
+    console.log(`TROCAR IP REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE AL `)
+    
+    // const ip = request.ip;
+    const ip = "151.243.219.17"
+
+    const urlDestination = await urlService.acessShort({ short: shortId, ip })
     return reply.redirect(urlDestination)
   }
 

@@ -1,7 +1,8 @@
 class UrlRepository {
-  constructor(bcrypt, pool) {
+  constructor(bcrypt, pool, axios) {
     this.bcrypt = bcrypt
     this.pool = pool
+    this.axios = axios
   }
 
   async getDetailsUrl({ userId, url }) {
@@ -15,7 +16,9 @@ class UrlRepository {
     const data = await this._getDataShort({ userId, short })
     if (!data?.url) return false
 
-    return await this._buildResponseData(data)
+    const clicks = await this.getClicksShort({ short })
+    const countrys = await this.getCountryShort({ short })
+    return await this._buildResponseData(data, clicks, countrys)
   }
 
   async getProtectShort({ short }) {
@@ -28,23 +31,29 @@ class UrlRepository {
 
   async getAllLinksUser({ userId }) {
     const rows = await this._getLinksUser({ userId })
-    const response = rows.map(({ short, owner, url, password, created_at, expire, expires_at, clicks, unique_clicks }) => {
-      const havePassword = password && password != "" ? true : false
-      const urlDestination = havePassword ? "***********" : url
 
-      const isExpire = expire && expires_at
-        ? new Date(expires_at).getTime() <= Date.now()
-        : false;
+    const response = await Promise.all(
+      rows.map(async ({ short, owner, url, password, created_at, expire, expires_at, unique_clicks }) => {
+        const havePassword = password && password != "" ? true : false
+        const urlDestination = havePassword ? "***********" : url
 
-      return {
-        havePassword,
-        urlDestination,
-        short: `${process.env.HOST}/${short}`,
-        clicks,
-        isExpire,
-        created_at
-      }
-    })
+        const isExpire = expire && expires_at
+          ? new Date(expires_at).getTime() <= Date.now()
+          : false;
+
+        const { totalClicks } = await this.getClicksShort({ short })
+        return {
+          havePassword,
+          urlDestination,
+          short,
+          linkShort: `${process.env.HOST}/${short}`,
+          linkDetails: `${process.env.FRONT_END}/details/${short}`,
+          isExpire,
+          created_at,
+          totalClicks
+        }
+      })
+    )
 
     return response
   }
@@ -76,12 +85,70 @@ class UrlRepository {
     return `${process.env.FRONT_END}/`
   }
 
-  async _buildResponseData(data) {
-    const { short, owner, password, url, created_at, expire, expires_at, clicks, unique_clicks } = data
+  async getClicksShort({ short }) {
+    const graph = []
+    const { rows } = await this.pool.query("SELECT * FROM clicks_per_day WHERE short = $1", [short])
+    if (!rows[0]) return { totalClicks: 0, graph }
+
+    let totalClicks = 0
+    for (const { clicks, date } of rows) {
+      graph.push({ clicks, date })
+      totalClicks += clicks
+    }
+
+    return { totalClicks, graph }
+  }
+
+  async getCountryShort({ short }) {
+    const { rows } = await this.pool.query("SELECT * FROM clicks_per_country WHERE short = $1", [short])
+    if (!rows[0]) return []
+
+    const countrys = []
+    for (const { clicks, country } of rows) {
+      countrys.push({ clicks, country: country.toLowerCase() })
+    }
+
+    return countrys
+  }
+
+  async getCountryUser({ ip }) {
+    try {
+      const response = await this.axios.get(`https://ipwho.is/${ip}`)
+      const country_name = response?.data?.country || ""
+      return country_name
+    } catch (err) {
+      throw err
+    }
+  }
+
+  async incrementClick({ short }) {
+    const query = `
+      INSERT INTO clicks_per_day(short, date, clicks)
+      VALUES ($1, CURRENT_DATE, 1)
+      ON CONFLICT (short, date)
+      DO UPDATE SET clicks = clicks_per_day.clicks + 1
+    `
+    await this.pool.query(query, [short])
+  }
+
+  async incrementCountry({ short, country }) {
+    const query = `
+      INSERT INTO clicks_per_country(short, country, clicks)
+      VALUES ($1, $2, 1)
+      ON CONFLICT (short, country)
+      DO UPDATE SET clicks = clicks_per_country.clicks + 1
+    `
+
+    await this.pool.query(query, [short, country])
+  }
+
+  async _buildResponseData(data, clicks = {}, countrys = []) {
+    const { short, owner, password, url, created_at, expire, expires_at, unique_clicks } = data
     const havePassword = password && password != "" ? true : false
     const urlDestination = havePassword ? "***********" : url
 
     const expire_date = expire ? expires_at : ""
+    const { totalClicks = 0, graph = [] } = clicks
 
     return {
       success: true,
@@ -91,12 +158,14 @@ class UrlRepository {
       created_at,
       expire,
       expire_date,
-      clicks: 0,
       unique_clicks: 0,
       graphClicks: [],
       urlDestination,
       urlDetails: `details/${short}`,
-      urlShort: `${process.env.HOST}/${short}`
+      urlShort: `${process.env.HOST}/${short}`,
+      totalClicks,
+      graph,
+      countrys
     }
   }
 

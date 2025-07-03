@@ -22,9 +22,16 @@ const commands = [
 
   `CREATE TABLE clicks_per_day(
     short VARCHAR(8) NOT NULL,
-    data DATE NOT NULL,
+    date DATE NOT NULL,
     clicks INTEGER DEFAULT 0,
-    PRIMARY KEY (short, data)
+    PRIMARY KEY (short, date)
+  )`,
+
+  `CREATE TABLE clicks_per_country(
+    short VARCHAR(8) NOT NULL,
+    country VARCHAR(8) NOT NULL,
+    clicks INTEGER DEFAULT 0,
+    PRIMARY KEY(short, country)
   )`
 ]
 
@@ -42,7 +49,12 @@ async function CreateTables() {
 
     await Promise.all(
       commands.map(async (command) => {
-        await client.query(command);
+        try {
+          await client.query(command);
+        } catch (err) {
+          console.error(`Erro at execute command [${command}], ERRO: ${err}`)
+          return
+        }
       })
     )
 
@@ -69,7 +81,7 @@ async function criarBanco() {
     console.log(`Database "${process.env.POSTGRESQL_DATABASE}" create!`);
   } catch (err) {
     if (err.code === '42P04') {
-      console.warn(`Database "${DB_NAME}" already exists.`);
+      console.warn(`Database "${process.env.POSTGRESQL_DATABASE}" already exists.`);
     } else {
       console.error('Error creating database:', err.message);
     }

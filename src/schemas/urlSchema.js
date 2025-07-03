@@ -56,11 +56,33 @@ const urlDetailsSchema = {
                         created_at: { type: 'string', format: 'date-time' },
                         expire: { type: 'boolean' },
                         expire_date: { type: 'string' },
-                        clicks: { type: 'integer' },
-                        graphClicks: { type: 'array', items: { type: 'object' } },
+                        totalClicks: { type: 'integer' },
+                        countrys: { 
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    clicks: { type: 'number' },
+                                    country: { type: 'string' },
+                                },
+
+                                required: [ 'clicks', 'country' ]
+                            }
+                        },
+                        graph: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    clicks: { type: 'number' },
+                                    date: { type: 'string', format: 'date' }
+                                },
+                                required: ['clicks', 'date']
+                            }
+                        },
                         unique_clicks: { type: 'integer' }
                     },
-                    required: ['success', 'short', 'urlDetails', 'urlShort', 'urlDestination', 'owner', 'havePassword', 'created_at', 'expire', 'expire_date', 'clicks', 'graphClicks', 'unique_clicks']
+                    required: ['success', 'short', 'urlDetails', 'urlShort', 'urlDestination', 'owner', 'havePassword', 'created_at', 'expire', 'expire_date', 'totalClicks', 'graph', 'unique_clicks']
                 }
             }
         }
