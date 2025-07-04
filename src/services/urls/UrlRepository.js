@@ -14,7 +14,7 @@ class UrlRepository {
 
   async getDetailsShort({ userId, short }) {
     const data = await this._getDataShort({ userId, short })
-    if (!data?.url) return false
+    if (!data?.url) throw new Error("URL is invalid or expire")
 
     const clicks = await this.getClicksShort({ short })
     const countrys = await this.getCountryShort({ short })
