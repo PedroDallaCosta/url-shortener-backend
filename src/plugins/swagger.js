@@ -6,7 +6,6 @@ const swaggerRegister = {
       description: 'Docs auth API',
       version: '1.0.0',
     },
-    servers: [{ url: `${process.env.BACK_END}/api` }],
   },
   exposeRoute: true,
 };
