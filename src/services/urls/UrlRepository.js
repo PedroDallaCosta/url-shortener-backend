@@ -46,7 +46,7 @@ class UrlRepository {
           havePassword,
           urlDestination,
           short,
-          linkShort: `${process.env.HOST}/${short}`,
+          linkShort: `${process.env.BACK_END}/${short}`,
           linkDetails: `${process.env.FRONT_END}/details/${short}`,
           isExpire,
           created_at,
@@ -162,7 +162,7 @@ class UrlRepository {
       graphClicks: [],
       urlDestination,
       urlDetails: `details/${short}`,
-      urlShort: `${process.env.HOST}/${short}`,
+      urlShort: `${process.env.BACK_END}/${short}`,
       totalClicks,
       graph,
       countrys
@@ -202,8 +202,8 @@ class UrlRepository {
     const canExpire = expireTime ? true : false;
     const expiresAtValue = canExpire ? expireTime : null;
 
-    await this.pool.query('INSERT INTO urls(short, owner, url, password, expire, expires_at, clicks, unique_clicks) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [
-      short, userId, url, password, canExpire, expiresAtValue, 0, 0
+    await this.pool.query('INSERT INTO urls(short, owner, url, password, expire, expires_at, unique_clicks) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
+      short, userId, url, password, canExpire, expiresAtValue, 0
     ])
 
     return { short }
