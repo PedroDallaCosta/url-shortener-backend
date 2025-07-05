@@ -42,7 +42,7 @@ fastify.register(require('./routes/default'));
 
 const start = async () => {
   try {
-    await fastify.listen({ port: process.env.FASTIFY_PORT })
+    await fastify.listen({ port: process.env.FASTIFY_PORT, host: '0.0.0.0' })
 
     const addresses = fastify.addresses()
     for (const { address, port } of addresses) console.log(`Server listen in ${address}:${port}`)
