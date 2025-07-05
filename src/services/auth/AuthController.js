@@ -18,6 +18,12 @@ class AuthController {
     return reply.send({ user: request.user });
   }
 
+  async refreshToken(request, reply) {
+    const { refreshToken } = request.cookies;
+    const tokens = await authService.refreshToken({ refreshToken })
+    return this._generateResponse({ reply, tokens })
+  }
+
   async logout(request, reply) {
     return reply
       .clearCookie('token', { path: '/' })
@@ -35,9 +41,15 @@ class AuthController {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7
       })
-      .send({ accessToken, refreshToken, userId });
+      .setCookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+      })
+      .send({ accessToken, userId });
   }
 }
 

@@ -16,10 +16,15 @@ async function authRoutes(fastify, opts) {
     handler: Auth.login.bind(Auth)
   });
 
-  fastify.get('/getToken', { 
+  fastify.post('/refreshToken', {
+    preHandler: fastify.csrfProtection,
+    handler: Auth.refreshToken.bind(Auth)
+  })
+
+  fastify.get('/getToken', {
     preHandler: [fastify.authenticate],
     handler: Auth.getToken
-   });
+  });
 
   fastify.post('/logout', {
     preHandler: [fastify.authenticate],
