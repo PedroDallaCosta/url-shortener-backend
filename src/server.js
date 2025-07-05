@@ -27,7 +27,7 @@ fastify.decorate("authenticate", authenticate(fastify));
 fastify.register(require('@fastify/csrf'), { sessionPlugin: '@fastify/session' });
 fastify.register(require('@fastify/jwt'), { secret: process.env.JWT_SECRET });
 
-fastify.register(require('./plugins/rateLimit'));
+fastify.register(require('./plugins/ratelimit'));
 fastify.setErrorHandler(require('./plugins/errors'))
 
 fastify.decorate('db', require('./config/database'));

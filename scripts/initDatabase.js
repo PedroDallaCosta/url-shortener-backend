@@ -10,14 +10,14 @@ const commands = [
     created_at TIMESTAMP DEFAULT NOW(),
     expire BOOLEAN DEFAULT false,
     expires_at TIMESTAMP,
-    clicks INTEGER DEFAULT 0,
     unique_clicks INTEGER DEFAULT 0
   );`,
 
   `CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    email_verify BOOLEAN DEFAULT FALSE
   );`,
 
   `CREATE TABLE clicks_per_day(
@@ -40,9 +40,9 @@ async function CreateTables() {
     const client = new Client({
       user: process.env.POSTGRESQL_USER,
       host: process.env.POSTGRESQL_HOST,
-      password: process.env.POSTGRESQL_PASSWORD,
       database: process.env.POSTGRESQL_DATABASE,
-      port: 5432,
+      password: process.env.POSTGRESQL_PASSWORD,
+      port: Number(process.env.POSTGRESQL_PORT),
     });
 
     await client.connect();
